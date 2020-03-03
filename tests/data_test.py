@@ -21,13 +21,13 @@ class TestDataSet(unittest.TestCase):
             )])
 
         path_dir_name = os.path.dirname(os.path.realpath(__file__))
-        data_dir = os.path.join(path_dir_name, "small_data")
+        data_path = os.path.join(path_dir_name, "small_data/labels.txt")
         tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
 
-        self.data = dataset.ImageTextDataset(data_folder=data_dir, transform=transform, tokenizer=tokenizer)
+        self.data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform, tokenizer=tokenizer)
 
     def test_data(self):
-        assert len(self.data) == 32
+        assert len(self.data) == 29
         assert len(self.data.texts[0]) < len(self.data.texts[-1])  # Make sure the data is sorted by length.
 
         for d in self.data:

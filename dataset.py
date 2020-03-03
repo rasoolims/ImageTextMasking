@@ -1,4 +1,3 @@
-import glob
 import os
 
 import numpy as np
@@ -9,51 +8,43 @@ from torch.utils.data import Dataset
 
 
 class ImageTextDataset(Dataset):
-    def __init__(self, data_folder: str, transform, tokenizer):
+    def __init__(self, data_idx_file: str, transform, tokenizer):
         """
 
-        :param data_folder: Has 2 subfolders: img, and txt. Each has file names starting from 0. It also
-        has a labels.txt file that has exactly n={number of img and txt files} lines.
+        :param data_idx_file: Each line is tab-separated. First: label, second: image path, others: tab-separated
+            sentences.
         :param transform:
         :param tokenizer: BERT-style tokenizer.
         """
         self.transform = transform
         self.tokenizer = tokenizer
-
-        init_multi_texts = glob.glob(os.path.join(data_folder, "txt", "*.txt"))  # each has many lines
         IMG_EXTENSIONS = {'.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP'}
-        image_folder = os.path.join(data_folder, "img")
 
-        with open(os.path.join(data_folder, "labels.txt"), "r") as reader:
-            init_labels = reader.read().strip().split("\n")
-            self.label2idx = {}
-            self.idx2label = []
-            for label in init_labels:
-                if label not in self.label2idx:
-                    self.label2idx[label] = len(self.label2idx)
-                    self.idx2label.append(label)
+        init_labels = []
+        init_images = []
+        init_sentences = []
+        batch_lens = []
+        self.label2idx = {}
+        self.idx2label = []
 
-        multi_texts = {}
-        for t in init_multi_texts:
-            with open(t, "r") as reader:
-                text_raw_list = reader.read().strip().split("\n")
-            text_tensor_list = [self.tokenizer.encode(text, add_special_tokens=True) for text in text_raw_list]
-            file_number = t[t.rfind("/") + 1:t.rfind(".")]
-            # the output should be list of string
-            multi_texts[file_number] = text_tensor_list
+        with open(data_idx_file, "r") as reader:
+            for line in reader:
+                spl = line.strip().split("\t")
+                label, image_path, sentences = spl[0], spl[1], spl[2:]
+                if os.path.exists(image_path):
+                    extension = image_path[image_path.rfind("."):]
+                    if extension not in IMG_EXTENSIONS:
+                        continue
 
-        batch_lens, texts, images, labels = [], [], [], []
-        for init_image in os.listdir(image_folder):
-            init_image = os.path.join(image_folder, init_image)
-            extension = init_image[init_image.rfind("."):]
-            if extension not in IMG_EXTENSIONS:
-                continue
-            file_number = init_image[init_image.rfind("/") + 1:init_image.rfind(".")]
-            for text_sentence in multi_texts[file_number]:
-                images.append(init_image)
-                texts.append(text_sentence)
-                batch_lens.append(len(text_sentence))
-                labels.append(self.label2idx[init_labels[int(file_number)]])
+                    for sen in sentences:
+                        if label not in self.label2idx:
+                            self.label2idx[label] = len(self.label2idx)
+                            self.idx2label.append(label)
+                        init_labels.append(self.label2idx[label])
+                        tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
+                        init_sentences.append(tok_sen)
+                        batch_lens.append(len(tok_sen))
+                        init_images.append(image_path)
 
         # Sorting the elements in the data based on batch length
         self.images = []
@@ -61,9 +52,9 @@ class ImageTextDataset(Dataset):
         self.labels = []
         len_ids = np.argsort(batch_lens)
         for len_id in len_ids:
-            self.texts.append(texts[len_id])
-            self.images.append(images[len_id])
-            self.labels.append(labels[len_id])
+            self.texts.append(init_sentences[len_id])
+            self.images.append(init_images[len_id])
+            self.labels.append(init_labels[len_id])
 
     def __len__(self):
         return len(self.images)

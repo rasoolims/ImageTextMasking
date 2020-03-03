@@ -11,7 +11,7 @@ class ImageTextDataset(Dataset):
         """
 
         :param data_folder: Has 2 subfolders: img, and txt. Each has file names starting from 0. It also
-        has a labels.txt file that has extactly n={number of img and txt files} lines.
+        has a labels.txt file that has exactly n={number of img and txt files} lines.
         :param transform:
         :param tokenizer: BERT-style tokenizer.
         """

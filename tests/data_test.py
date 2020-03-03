@@ -8,7 +8,8 @@ import dataset
 
 
 class TestDataSet(unittest.TestCase):
-    def test_data(self):
+    def __init__(self, methodName='runTest'):
+        super().__init__(methodName=methodName)
         transform = transforms.Compose([  # [1]
             transforms.Resize(256),  # [2]
             transforms.CenterCrop(224),  # [3]
@@ -22,11 +23,13 @@ class TestDataSet(unittest.TestCase):
         data_dir = os.path.join(path_dir_name, "small_data")
         tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
 
-        data = dataset.ImageTextDataset(data_folder=data_dir, transform=transform, tokenizer=tokenizer)
-        assert len(data) == 32
-        assert len(data.texts[0]) < len(data.texts[-1]) # Make sure the data is sorted by length.
+        self.data = dataset.ImageTextDataset(data_folder=data_dir, transform=transform, tokenizer=tokenizer)
 
-        for d in data:
+    def test_data(self):
+        assert len(self.data) == 32
+        assert len(self.data.texts[0]) < len(self.data.texts[-1]) # Make sure the data is sorted by length.
+
+        for d in self.data:
             assert len(d) == 3
 
 if __name__ == '__main__':

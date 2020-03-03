@@ -13,7 +13,7 @@ class ImageTextDataset(Dataset):
         :param data_folder: Has 2 subfolders: img, and txt. Each has file names starting from 0. It also
         has a labels.txt file that has extactly n={number of img and txt files} lines.
         :param transform:
-        :param tokenizer:
+        :param tokenizer: BERT-style tokenizer.
         """
         self.transform = transform
         init_multi_texts = glob.glob(os.path.join(data_folder, "txt", "*.txt"))  # each has many lines

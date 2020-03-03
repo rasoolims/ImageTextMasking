@@ -1,6 +1,5 @@
-import torch
-import torch.nn.functional as F
 from torchvision import models
+
 
 class ModifiedResnet(models.ResNet):
     def _forward_impl(self, x):
@@ -15,11 +14,12 @@ class ModifiedResnet(models.ResNet):
         x = self.layer2(x)
         x = self.layer3(x)
         grid_hidden = self.layer4(x)
+        grid_hidden = grid_hidden.view(grid_hidden.size(0), grid_hidden.size(1), -1)
 
-        return grid_hidden.permute((0,2,3,1))
+        return grid_hidden.permute((0, 2, 1))
 
 
-def init_net(freeze:bool=False):
+def init_net(freeze: bool = False):
     model = models.resnet50(pretrained=True)
     model.__class__ = ModifiedResnet
     if freeze:

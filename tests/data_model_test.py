@@ -53,8 +53,8 @@ class TestDataSet(unittest.TestCase):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
         for d in loader:
             y = model(d["images"])
-            assert y.size(1) == y.size(2) == 7
-            assert y.size(3) == 2048
+            assert y.size(1) == 49
+            assert y.size(2) == 2048
             assert d["images"].size(0) == y.size(0)
 
 

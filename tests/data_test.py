@@ -1,6 +1,7 @@
 import os
 import unittest
 
+import torch.utils.data as data_utils
 from torchvision import transforms
 from transformers import *
 
@@ -27,10 +28,18 @@ class TestDataSet(unittest.TestCase):
 
     def test_data(self):
         assert len(self.data) == 32
-        assert len(self.data.texts[0]) < len(self.data.texts[-1]) # Make sure the data is sorted by length.
+        assert len(self.data.texts[0]) < len(self.data.texts[-1])  # Make sure the data is sorted by length.
 
         for d in self.data:
             assert len(d) == 3
+
+    def test_loader(self):
+        collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
+        loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=collator)
+
+        for d in loader:
+            assert len(d) == 3
+
 
 if __name__ == '__main__':
     unittest.main()

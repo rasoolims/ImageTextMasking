@@ -17,7 +17,7 @@ class ImageTextDataset(Dataset):
         """
         self.transform = transform
         init_multi_texts = glob.glob(os.path.join(data_folder, "txt", "*.txt"))  # each has many lines
-        IMG_EXTENSIONS = set(['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP'])
+        IMG_EXTENSIONS = {'.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP'}
         image_folder = os.path.join(data_folder, "img")
 
         with open(os.path.join(data_folder, "labels.txt"), "r") as reader:

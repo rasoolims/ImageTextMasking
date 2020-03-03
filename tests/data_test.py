@@ -38,9 +38,13 @@ class TestDataSet(unittest.TestCase):
     def test_loader(self):
         collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=collator)
+        roberta_model = XLMRobertaModel.from_pretrained("xlm-roberta-base")
 
         for d in loader:
-            assert len(d) == 3
+            assert len(d) == 4
+            hidden_reps, cls_head = roberta_model(d["texts"], attention_mask=d["pad_mask"])
+            assert hidden_reps.size(0) <= 4
+            assert cls_head.size(0) <= 4
 
 
 if __name__ == '__main__':

@@ -56,7 +56,7 @@ class ImageTextDataset(Dataset):
             self.images.append(init_images[len_id])
             self.labels.append(init_labels[len_id])
 
-        print("loaded", len(self.images), "image/text pairs")
+        print("loaded", len(self.images), "image/text pairs with", len(self.label2idx), "unique labels")
 
     def __len__(self):
         return len(self.images)

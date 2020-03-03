@@ -33,6 +33,8 @@ class TestDataSet(unittest.TestCase):
         for d in self.data:
             assert len(d) == 3
 
+        assert len(self.data.label2idx) == 3
+
     def test_loader(self):
         collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=collator)

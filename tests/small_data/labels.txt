@@ -12,4 +12,4 @@ first	small_data/img/10.jpg	This is a random sentence	This is its second random
 second	small_data/img/11.jpg	This is a random sentence	This is its second random
 first	small_data/img/12.jpg	This is a random sentence	This is its second random
 first	small_data/img/13.jpg	This is a random sentence	This is its second random
-first	small_data/img/14.jpg	This is a random sentence	This is its second random longer sentence
+third	small_data/img/14.jpg	This is a random sentence	This is its second random longer sentence

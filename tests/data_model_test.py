@@ -25,11 +25,11 @@ class TestDataSet(unittest.TestCase):
 
         path_dir_name = os.path.dirname(os.path.realpath(__file__))
         data_path = os.path.join(path_dir_name, "small_data/labels.txt")
-        tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
+        tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
 
         self.data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform, tokenizer=tokenizer)
         self.collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
-        self.roberta_model = XLMRobertaModel.from_pretrained("xlm-roberta-base")
+        self.text_encoder = AlbertModel.from_pretrained("albert-base-v1")
         self.image_model = image_model.init_net(embed_dim=768)
         self.loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
 
@@ -47,7 +47,7 @@ class TestDataSet(unittest.TestCase):
 
         for d in loader:
             assert len(d) == 4
-            hidden_reps, cls_head = self.roberta_model(d["texts"], attention_mask=d["pad_mask"])
+            hidden_reps, cls_head = self.text_encoder(d["texts"], attention_mask=d["pad_mask"])
             assert hidden_reps.size(0) <= 4
             assert cls_head.size(0) <= 4
 
@@ -68,13 +68,32 @@ class TestDataSet(unittest.TestCase):
 
     def testImgTxtDecoder(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
-        model = attention.ImageTextModel(text_encoder=self.roberta_model, image_encoder=self.image_model)
+        model = attention.ImageTextModel(text_encoder=self.text_encoder,
+                                         mask_id=self.data.tokenizer.mask_token_id, image_encoder=self.image_model)
 
         for d in loader:
-            output = model(data=d)
+            result = model(data=d)
+            output = result[0]
             assert output.size(0) == d["texts"].size(0)
             assert output.size(1) == d["texts"].size(1)
             assert output.size(2) == 768
+            assert result[1] is None
+            assert result[2] is None
+            break  # just testing the first case
+
+    def testImgTxtDecoderWithMasking(self):
+        loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
+        model = attention.ImageTextModel(text_encoder=self.text_encoder,
+                                         mask_id=self.data.tokenizer.mask_token_id, image_encoder=self.image_model)
+
+        for d in loader:
+            result = model(data=d, mask_prob=0.5)  # choosing high mask prob for testing only
+            output, mask, masked_ids = result
+            assert output.size(0) == d["texts"].size(0)
+            assert output.size(1) == d["texts"].size(1)
+            assert output.size(2) == 768
+            assert output[mask].size(0) == masked_ids.size(0)
+            assert masked_ids.dim() == 1
             break  # just testing the first case
 
 

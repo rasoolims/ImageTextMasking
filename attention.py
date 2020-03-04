@@ -134,5 +134,6 @@ class DecoderLayer(nn.Module):
         :param text: text representation for this layer.
         :param image: Precomputed image representation for this layer.
         """
+        text = text.masked_fill(text_mask.unsqueeze(-1)==False, -1e9) # First mask text due to padding.
         text = self.sublayer[0](text, lambda text: self.src_attn(text, image, image, image_mask))
         return self.sublayer[1](text, self.feed_forward)

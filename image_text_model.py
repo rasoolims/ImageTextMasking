@@ -35,5 +35,5 @@ class ImageTextModel(nn.Module):
             texts[mask] = self.mask_id
 
         text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=pads)
-        decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=data["pad_mask"])
+        decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=pads)
         return decoder_output, mask, masked_ids

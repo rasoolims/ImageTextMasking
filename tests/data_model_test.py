@@ -9,6 +9,7 @@ from transformers import *
 import attention
 import dataset
 import image_model
+import image_text_model
 
 
 class TestDataSet(unittest.TestCase):
@@ -68,8 +69,9 @@ class TestDataSet(unittest.TestCase):
 
     def testImgTxtDecoder(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
-        model = attention.ImageTextModel(text_encoder=self.text_encoder,
-                                         mask_id=self.data.tokenizer.mask_token_id, image_encoder=self.image_model)
+        model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
+                                                mask_id=self.data.tokenizer.mask_token_id,
+                                                image_encoder=self.image_model)
 
         for d in loader:
             result = model(data=d)
@@ -83,8 +85,9 @@ class TestDataSet(unittest.TestCase):
 
     def testImgTxtDecoderWithMasking(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
-        model = attention.ImageTextModel(text_encoder=self.text_encoder,
-                                         mask_id=self.data.tokenizer.mask_token_id, image_encoder=self.image_model)
+        model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
+                                                mask_id=self.data.tokenizer.mask_token_id,
+                                                image_encoder=self.image_model)
 
         for d in loader:
             result = model(data=d, mask_prob=0.5)  # choosing high mask prob for testing only

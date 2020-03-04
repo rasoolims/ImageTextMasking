@@ -1,10 +1,12 @@
 import os
 import unittest
 
+import torch
 import torch.utils.data as data_utils
 from torchvision import transforms
 from transformers import *
 
+import attention
 import dataset
 import image_model
 
@@ -27,6 +29,9 @@ class TestDataSet(unittest.TestCase):
 
         self.data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform, tokenizer=tokenizer)
         self.collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
+        self.roberta_model = XLMRobertaModel.from_pretrained("xlm-roberta-base")
+        self.image_model = image_model.init_net(embed_dim=768)
+        self.loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
 
     def test_data(self):
         assert len(self.data) == 29
@@ -39,23 +44,38 @@ class TestDataSet(unittest.TestCase):
 
     def test_loader(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
-        roberta_model = XLMRobertaModel.from_pretrained("xlm-roberta-base")
 
         for d in loader:
             assert len(d) == 4
-            hidden_reps, cls_head = roberta_model(d["texts"], attention_mask=d["pad_mask"])
+            hidden_reps, cls_head = self.roberta_model(d["texts"], attention_mask=d["pad_mask"])
             assert hidden_reps.size(0) <= 4
             assert cls_head.size(0) <= 4
 
     def test_image_model(self):
-        model = image_model.init_net()
-
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
         for d in loader:
-            y = model(d["images"])
+            y = self.image_model(d["images"])
             assert y.size(1) == 49
-            assert y.size(2) == 2048
+            assert y.size(2) == 768
             assert d["images"].size(0) == y.size(0)
+
+    def test_attention(self):
+        text = torch.rand(4, 30, 128)
+        image = torch.rand(4, 15, 128)
+        mha = attention.MultiHeadedAttention(num_heads=2, d_model=128, dropout=0)
+        a = mha(query=text, key=image, value=image)
+        assert a.size() == text.size()
+
+    def testImgTxtDecoder(self):
+        loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
+        model = attention.ImageTextModel(text_encoder=self.roberta_model, image_encoder=self.image_model)
+
+        for d in loader:
+            output = model(data=d)
+            assert output.size(0) == d["texts"].size(0)
+            assert output.size(1) == d["texts"].size(1)
+            assert output.size(2) == 768
+            break  # just testing the first case
 
 
 if __name__ == '__main__':

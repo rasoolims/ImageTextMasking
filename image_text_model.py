@@ -1,5 +1,5 @@
 from attention import *
-
+from typing import Dict
 
 class ImageTextModel(nn.Module):
     def __init__(self, text_encoder, image_encoder, mask_id: int, d_model: int = 768, dropout: float = 0.1,
@@ -25,7 +25,7 @@ class ImageTextModel(nn.Module):
         """
         image_hidden = self.image_encoder(data["images"])
 
-        texts = data["texts"]
+        texts, pads = data["texts"], data["pad_mask"]
         mask, masked_ids = None, None
         if mask_prob > 0:
             assert 0 < mask_prob < 1
@@ -34,6 +34,6 @@ class ImageTextModel(nn.Module):
             masked_ids = texts[mask]
             texts[mask] = self.mask_id
 
-        text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=data["pad_mask"])
+        text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=pads)
         decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=data["pad_mask"])
         return decoder_output, mask, masked_ids

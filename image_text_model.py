@@ -20,14 +20,17 @@ class ImageTextModel(nn.Module):
             layer=DecoderLayer(size=d_model, self_attn=copy.deepcopy(attention), src_attn=copy.deepcopy(attention),
                                feed_forward=ff, dropout=dropout), N=num_layers)
 
-    def forward(self, data: Dict[str, torch.Tensor], mask_prob: float = 0.0):
+    def forward(self, device, data: Dict[str, torch.Tensor], mask_prob: float = 0.0):
         """
         :param data: A minibatch as dictionary that has transformed image and tokenized text as long tensors.
         :return:
         """
-        image_hidden = self.image_encoder(data["images"])
+        images = data["images"].to(device)
+        texts = data["texts"].to(device)
+        pads = data["pad_mask"].to(device)
 
-        texts, pads = data["texts"], data["pad_mask"]
+        image_hidden = self.image_encoder(images)
+
         mask, masked_ids = None, None
         if mask_prob > 0:
             assert 0 < mask_prob < 1

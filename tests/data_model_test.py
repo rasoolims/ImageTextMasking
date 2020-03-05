@@ -33,6 +33,7 @@ class TestDataSet(unittest.TestCase):
         self.text_encoder = AlbertModel.from_pretrained("albert-base-v1")
         self.image_model = image_model.init_net(embed_dim=768)
         self.loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def test_data(self):
         assert len(self.data) == 28
@@ -72,9 +73,14 @@ class TestDataSet(unittest.TestCase):
         model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
                                                 mask_id=self.data.tokenizer.mask_token_id,
                                                 image_encoder=self.image_model)
+        num_gpu = torch.cuda.device_count()
+        if num_gpu > 1:
+            print("Let's use", num_gpu, "GPUs!")
+            model = torch.nn.DataParallel(model)
+        model = model.to(self.device)
 
         for d in loader:
-            result = model(data=d)
+            result = model(device=self.device, data=d)
             output = result[0]
             assert output.size(0) == d["texts"].size(0)
             assert output.size(1) == d["texts"].size(1)
@@ -88,9 +94,14 @@ class TestDataSet(unittest.TestCase):
         model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
                                                 mask_id=self.data.tokenizer.mask_token_id,
                                                 image_encoder=self.image_model)
+        num_gpu = torch.cuda.device_count()
+        if num_gpu > 1:
+            print("Let's use", num_gpu, "GPUs!")
+            model = torch.nn.DataParallel(model)
+        model = model.to(self.device)
 
         for d in loader:
-            result = model(data=d, mask_prob=0.5)  # choosing high mask prob for testing only
+            result = model(device=self.device, data=d, mask_prob=0.5)  # choosing high mask prob for testing only
             output, mask, masked_ids = result
             assert output.size(0) == d["texts"].size(0)
             assert output.size(1) == d["texts"].size(1)

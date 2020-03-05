@@ -1,5 +1,7 @@
-from attention import *
 from typing import Dict
+
+from attention import *
+
 
 class ImageTextModel(nn.Module):
     def __init__(self, text_encoder, image_encoder, mask_id: int, d_model: int = 768, dropout: float = 0.1,
@@ -31,6 +33,7 @@ class ImageTextModel(nn.Module):
             assert 0 < mask_prob < 1
             mask = torch.empty(texts.size()).uniform_(0, 1) < mask_prob
             mask[0] = False
+            mask[pads] = False  # We should not mask pads.
             masked_ids = texts[mask]
             texts[mask] = self.mask_id
 

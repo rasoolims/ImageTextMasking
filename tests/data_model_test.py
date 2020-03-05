@@ -35,7 +35,7 @@ class TestDataSet(unittest.TestCase):
         self.loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
 
     def test_data(self):
-        assert len(self.data) == 29
+        assert len(self.data) == 28
         assert len(self.data.texts[0]) < len(self.data.texts[-1])  # Make sure the data is sorted by length.
 
         for d in self.data:

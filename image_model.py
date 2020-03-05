@@ -1,7 +1,8 @@
-from torchvision import models
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
+from torchvision import models
+
 
 class ModifiedResnet(models.ResNet):
     def _forward_impl(self, x):
@@ -22,7 +23,7 @@ class ModifiedResnet(models.ResNet):
             grid_hidden = F.dropout(grid_hidden, p=self.dropout)
         out = self.fc(grid_hidden)
 
-        location_indices = torch.stack(batch_size*[torch.tensor([i for i in range(49)])])
+        location_indices = torch.stack(batch_size * [torch.tensor([i for i in range(49)])])
         location_embedding = self.location_embedding(location_indices)
         if self.dropout > 0:
             location_embedding = F.dropout(location_embedding, p=self.dropout)
@@ -32,7 +33,7 @@ class ModifiedResnet(models.ResNet):
         return out
 
 
-def init_net(embed_dim:int, dropout:float=0.1, freeze: bool = False):
+def init_net(embed_dim: int, dropout: float = 0.1, freeze: bool = False):
     model = models.resnet50(pretrained=True)
     model.__class__ = ModifiedResnet
     model.dropout = dropout

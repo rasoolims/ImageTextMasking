@@ -80,5 +80,5 @@ class ImageTextCollator(object):
         labels = torch.stack([b["label"] for b in batch])
 
         padded_text = pad_sequence(texts, padding_value=self.pad_idx).T
-        pad_mask = (padded_text != self.pad_idx)
+        pad_mask = (padded_text == self.pad_idx)
         return {"images": images, "texts": padded_text, "labels": labels, "pad_mask": pad_mask}

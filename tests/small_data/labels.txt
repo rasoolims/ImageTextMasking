@@ -1,4 +1,4 @@
-first	small_data/img/0.jpg	This is a random sentence	This is its second random
+first	small_data/img/0.jpg	This
 first	small_data/img/1.jpg	This is a random sentence	This is its second random
 first	small_data/img/2.jpg	This is a random sentence	This is its second random
 second	small_data/img/3.jpg	This is a random sentence	This is its second random

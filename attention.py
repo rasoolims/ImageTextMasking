@@ -20,7 +20,7 @@ def attention(query, key, value, mask=None, dropout=None):
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     if mask is not None:
-        scores = scores.masked_fill(mask == 0, -1e9)
+        scores = scores.masked_fill(mask == True, -1e9)
     p_attn = F.softmax(scores, dim=-1)
     if dropout is not None:
         p_attn = dropout(p_attn)
@@ -134,6 +134,6 @@ class DecoderLayer(nn.Module):
         :param text: text representation for this layer.
         :param image: Precomputed image representation for this layer.
         """
-        text = text.masked_fill(text_mask.unsqueeze(-1)==False, -1e9) # First mask text due to padding.
+        text = text.masked_fill(text_mask.unsqueeze(-1) == True, -1e9)  # First mask text due to padding.
         text = self.sublayer[0](text, lambda text: self.src_attn(text, image, image, image_mask))
         return self.sublayer[1](text, self.feed_forward)

@@ -2,7 +2,6 @@ import time
 from optparse import OptionParser
 
 import torch
-import torch.nn as nn
 import torch.utils.data as data_utils
 from torchvision import transforms
 from transformers import *
@@ -10,6 +9,31 @@ from transformers import *
 import dataset
 import image_model
 import image_text_model
+
+
+def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=None, reduce=True):
+    """
+    Got it from
+    https://github.com/pytorch/fairseq/blob/46b773a393c423f653887c382e4d55e69627454d/fairseq/criterions/label_smoothed_cross_entropy.py
+    """
+    if target.dim() == lprobs.dim() - 1:
+        target = target.unsqueeze(-1)
+    nll_loss = -lprobs.gather(dim=-1, index=target)
+    smooth_loss = -lprobs.sum(dim=-1, keepdim=True)
+    if ignore_index is not None:
+        pad_mask = target.eq(ignore_index)
+        if pad_mask.any():
+            nll_loss.masked_fill_(pad_mask, 0.)
+            smooth_loss.masked_fill_(pad_mask, 0.)
+    else:
+        nll_loss = nll_loss.squeeze(-1)
+        smooth_loss = smooth_loss.squeeze(-1)
+    if reduce:
+        nll_loss = nll_loss.sum()
+        smooth_loss = smooth_loss.sum()
+    eps_i = epsilon / lprobs.size(-1)
+    loss = (1. - epsilon) * nll_loss + eps_i * smooth_loss
+    return loss
 
 
 class NoamOpt:
@@ -47,12 +71,13 @@ class NoamOpt:
 
 class MaskLoss:
     def __init__(self, optimizer=None):
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = label_smoothed_nll_loss
         self.optimizer = optimizer
 
     def __call__(self, prediction, gold_standard, norm):
         loss = self.criterion(prediction.contiguous().view(-1, prediction.size(-1)),
-                              gold_standard.contiguous().view(-1)) / norm
+                              gold_standard.contiguous().view(-1), epsilon=0.1)
+
         loss.backward()
         if self.optimizer is not None:
             self.optimizer.step()
@@ -76,7 +101,7 @@ class Trainer:
     @staticmethod
     def get_std_opt(model):
         return NoamOpt(model.d_model, 2, 4000,
-                       torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
+                       torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.98), eps=1e-9))
 
     def train_epoch(self, data_iter: data_utils.DataLoader):
         "Standard Training and Logging Function"
@@ -103,7 +128,7 @@ class Trainer:
         return total_loss / total_tokens
 
     @staticmethod
-    def train(data_path: str, num_epochs: int, mask_prob: float = 0.15):
+    def train(options):
         transform = transforms.Compose([  # [1]
             transforms.Resize(256),  # [2]
             transforms.CenterCrop(224),  # [3]
@@ -118,16 +143,20 @@ class Trainer:
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
 
-        train_data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform, tokenizer=tokenizer)
+        train_data = dataset.ImageTextDataset(data_idx_file=options.data_path, transform=transform, tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)
         loader = data_utils.DataLoader(train_data, batch_size=4, shuffle=False, collate_fn=collator)
 
         model = image_text_model.ImageTextModel(text_encoder=text_encoder, image_encoder=img_model,
-                                                tokenizer=tokenizer)  # todo other things as options in arg parser
+                                                tokenizer=tokenizer,
+                                                d_model=options.d_model,
+                                                dropout=options.dropout,
+                                                d_ff=options.d_ff,
+                                                num_layers=options.num_layers,
+                                                num_heads=options.num_heads)
+        trainer = Trainer(model=model, mask_prob=options.mask_prob, optimizer=Trainer.get_std_opt(model))
 
-        trainer = Trainer(model=model, mask_prob=mask_prob, optimizer=Trainer.get_std_opt(model))
-
-        for i in range(num_epochs):
+        for i in range(options.num_epochs):
             trainer.train_epoch(loader)
 
 
@@ -137,10 +166,15 @@ def get_options():
     parser.add_option("--data", dest="data_path", help="Path to the data folder", metavar="FILE", default=None)
     parser.add_option("--epoch", dest="num_epochs", help="Number of training epochs", type="int", default=25)
     parser.add_option("--mask", dest="mask_prob", help="Random masking probability", type="float", default=0.15)
+    parser.add_option("--embed", dest="d_model", help="Embedding of contextual word vectors", type="int", default=768)
+    parser.add_option("--dropout", dest="dropout", help="Dropout probability", type="float", default=0.1)
+    parser.add_option("--dff", dest="d_ff", help="Position-wise feed-forward dimensions", type="int", default=2048)
+    parser.add_option("--layer", dest="num_layers", help="Number of Layers in cross-attention", type="int", default=2)
+    parser.add_option("--heads", dest="num_heads", help="Number of attention heads", type="int", default=8)
     (options, args) = parser.parse_args()
     return options
 
 
 if __name__ == "__main__":
     options = get_options()
-    Trainer.train(data_path=options.data_path, num_epochs=options.num_epochs, mask_prob=options.mask_prob)
+    Trainer.train(options=options)

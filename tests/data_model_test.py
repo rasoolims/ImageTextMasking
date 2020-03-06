@@ -95,7 +95,7 @@ class TestDataSet(unittest.TestCase):
         model = model.to(self.device)
 
         # choose high value for mask just for test
-        trainer = train.Trainer(model=model, mask_prob=0.5, optimizer=train.Trainer.get_std_opt(model))
+        trainer = train.Trainer(model=model, mask_prob=0.5)
         loss = trainer.train_epoch(data_iter=loader)
 
         assert float(loss.data) >= 0

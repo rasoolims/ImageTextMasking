@@ -72,9 +72,8 @@ class TestDataSet(unittest.TestCase):
     def testImgTxtDecoderWithMasking(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
         model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
-                                                vocab_size=self.data.tokenizer.vocab_size,
-                                                mask_id=self.data.tokenizer.mask_token_id,
-                                                image_encoder=self.image_model)
+                                                image_encoder=self.image_model,
+                                                tokenizer=self.data.tokenizer)
         num_gpu = torch.cuda.device_count()
         if num_gpu > 1:
             print("Let's use", num_gpu, "GPUs!")
@@ -91,20 +90,13 @@ class TestDataSet(unittest.TestCase):
 
     def testTrainer(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
-        model = image_text_model.ImageTextModel(text_encoder=self.text_encoder,
-                                                vocab_size=self.data.tokenizer.vocab_size,
-                                                mask_id=self.data.tokenizer.mask_token_id,
-                                                image_encoder=self.image_model)
-        num_gpu = torch.cuda.device_count()
-        if num_gpu > 1:
-            print("Let's use", num_gpu, "GPUs!")
-            model = torch.nn.DataParallel(model)
+        model = image_text_model.ImageTextModel(text_encoder=self.text_encoder, image_encoder=self.image_model,
+                                                tokenizer=self.data.tokenizer)
         model = model.to(self.device)
 
         # choose high value for mask just for test
-        trainer = train.Trainer(model=model, vocab_size=self.data.tokenizer.vocab_size,
-                                padding_idx=self.data.tokenizer.pad_token_id, mask_prob=0.5)
-        loss = trainer.train_epoch(self.device, data_iter=loader)
+        trainer = train.Trainer(model=model, mask_prob=0.5)
+        loss = trainer.train_epoch(data_iter=loader)
 
         assert float(loss.data) >= 0
 

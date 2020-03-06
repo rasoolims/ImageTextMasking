@@ -1,6 +1,5 @@
-import os
-import sys
 import time
+from optparse import OptionParser
 
 import torch
 import torch.nn as nn
@@ -94,9 +93,16 @@ class Trainer:
             trainer.train_epoch(loader)
 
 
-if __name__ == "__main__":
-    data_path = os.path.abspath(sys.argv[1])
-    num_epochs = int(sys.argv[2])  # todo: use arg parser
-    mask_prob = float(sys.argv[3])
+def get_options():
+    global options
+    parser = OptionParser()
+    parser.add_option("--data", dest="data_path", help="Path to the data folder", metavar="FILE", default=None)
+    parser.add_option("--epoch", dest="num_epochs", help="Number of training epochs", type="int", default=25)
+    parser.add_option("--mask", dest="mask_prob", help="Random masking probability", type="float", default=0.15)
+    (options, args) = parser.parse_args()
+    return options
 
-    Trainer.train(data_path=data_path, num_epochs=num_epochs, mask_prob=mask_prob)
+
+if __name__ == "__main__":
+    options = get_options()
+    Trainer.train(data_path=options.data_path, num_epochs=options.num_epochs, mask_prob=options.mask_prob)

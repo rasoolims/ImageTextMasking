@@ -1,15 +1,15 @@
-first	small_data/img/0.jpg	This
-first	small_data/img/1.jpg	This is a random sentence	This is its second random
-first	small_data/img/2.jpg	This is a random sentence	This is its second random
-second	small_data/img/3.jpg	This is a random sentence	This is its second random
-first	small_data/img/4.jpg	This is a random sentence	This is its second random
-first	small_data/img/5.jpg	This is a random sentence	This is its second random
-first	small_data/img/6.jpg	This is a random sentence	This is its second random
-first	small_data/img/7.jpg	This is a random sentence	This is its second random
-second	small_data/img/8.jpg	This is a random sentence
-first	small_data/img/9.jpg	This is a random sentence	This is its second random
-first	small_data/img/10.jpg	This is a random sentence	This is its second random
-second	small_data/img/11.jpg	This is a random sentence	This is its second random
-first	small_data/img/12.jpg	This is a random sentence	This is its second random
-first	small_data/img/13.jpg	This is a random sentence	This is its second random
-third	small_data/img/14.jpg	This is a random sentence	This is its second random longer sentence
+first	img/0.jpg	This
+first	img/1.jpg	This is a random sentence	This is its second random
+first	img/2.jpg	This is a random sentence	This is its second random
+second	img/3.jpg	This is a random sentence	This is its second random
+first	img/4.jpg	This is a random sentence	This is its second random
+first	img/5.jpg	This is a random sentence	This is its second random
+first	img/6.jpg	This is a random sentence	This is its second random
+first	img/7.jpg	This is a random sentence	This is its second random
+second	img/8.jpg	This is a random sentence
+first	img/9.jpg	This is a random sentence	This is its second random
+first	img/10.jpg	This is a random sentence	This is its second random
+second	img/11.jpg	This is a random sentence	This is its second random
+first	img/12.jpg	This is a random sentence	This is its second random
+first	img/13.jpg	This is a random sentence	This is its second random
+third	img/14.jpg	This is a random sentence	This is its second random longer sentence

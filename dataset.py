@@ -26,11 +26,15 @@ class ImageTextDataset(Dataset):
         batch_lens = []
         self.label2idx = {}
         self.idx2label = []
+        data_dir = os.path.abspath(os.path.dirname(data_idx_file))
 
         with open(data_idx_file, "r") as reader:
             for line in reader:
                 spl = line.strip().split("\t")
                 label, image_path, sentences = spl[0], spl[1], spl[2:]
+                if not image_path.startswith("/"):
+                    image_path = os.path.join(data_dir, image_path)
+
                 if os.path.exists(image_path):
                     extension = image_path[image_path.rfind("."):]
                     if extension not in IMG_EXTENSIONS:

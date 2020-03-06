@@ -16,6 +16,7 @@ class ImageTextModel(nn.Module):
         ff = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.text_encoder = text_encoder
         self.image_encoder = image_encoder
+        self.d_model = d_model
 
         self.decoder = Decoder(
             layer=DecoderLayer(size=d_model, self_attn=copy.deepcopy(attention), src_attn=copy.deepcopy(attention),

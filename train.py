@@ -12,6 +12,39 @@ import image_model
 import image_text_model
 
 
+class NoamOpt:
+    "Optim wrapper that implements rate."
+
+    """
+    from https://nlp.seas.harvard.edu/2018/04/03/attention.html
+    """
+
+    def __init__(self, model_size, factor, warmup, optimizer):
+        self.optimizer = optimizer
+        self._step = 0
+        self.warmup = warmup
+        self.factor = factor
+        self.model_size = model_size
+        self._rate = 0
+
+    def step(self):
+        "Update parameters and rate"
+        self._step += 1
+        rate = self.rate()
+        for p in self.optimizer.param_groups:
+            p['lr'] = rate
+        self._rate = rate
+        self.optimizer.step()
+
+    def rate(self, step=None):
+        "Implement `lrate` above"
+        if step is None:
+            step = self._step
+        return self.factor * \
+               (self.model_size ** (-0.5) *
+                min(step ** (-0.5), step * self.warmup ** (-1.5)))
+
+
 class MaskLoss:
     def __init__(self, optimizer=None):
         self.criterion = nn.CrossEntropyLoss()
@@ -39,6 +72,11 @@ class Trainer:
             print("Let's use", num_gpu, "GPUs!")
             self.model = torch.nn.DataParallel(self.model)
         self.model = self.model.to(self.device)
+
+    @staticmethod
+    def get_std_opt(model):
+        return NoamOpt(model.d_model, 2, 4000,
+                       torch.optim.Adam(model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
 
     def train_epoch(self, data_iter: data_utils.DataLoader):
         "Standard Training and Logging Function"
@@ -87,7 +125,7 @@ class Trainer:
         model = image_text_model.ImageTextModel(text_encoder=text_encoder, image_encoder=img_model,
                                                 tokenizer=tokenizer)  # todo other things as options in arg parser
 
-        trainer = Trainer(model=model, mask_prob=mask_prob, optimizer=None)  # todo change optimizer
+        trainer = Trainer(model=model, mask_prob=mask_prob, optimizer=Trainer.get_std_opt(model))
 
         for i in range(num_epochs):
             trainer.train_epoch(loader)

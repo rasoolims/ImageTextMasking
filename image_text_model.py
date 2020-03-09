@@ -19,7 +19,7 @@ class ImageTextModel(nn.Module):
         self.d_model = d_model
 
         self.decoder = Decoder(
-            layer=DecoderLayer(size=d_model, self_attn=copy.deepcopy(attention), src_attn=copy.deepcopy(attention),
+            layer=DecoderLayer(size=d_model, src_attn=attention,
                                feed_forward=ff, dropout=dropout), N=num_layers)
         self.output_layer = nn.Linear(d_model, self.tokenizer.vocab_size, )
 

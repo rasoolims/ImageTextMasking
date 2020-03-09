@@ -121,10 +121,9 @@ class Decoder(nn.Module):
 class DecoderLayer(nn.Module):
     "Decoder is made of self-attn, src-attn, and feed forward (defined below)"
 
-    def __init__(self, size, self_attn, src_attn, feed_forward, dropout):
+    def __init__(self, size, src_attn, feed_forward, dropout):
         super(DecoderLayer, self).__init__()
         self.size = size
-        self.self_attn = self_attn
         self.src_attn = src_attn
         self.feed_forward = feed_forward
         self.sublayer = clones(SublayerConnection(size, dropout), 2)

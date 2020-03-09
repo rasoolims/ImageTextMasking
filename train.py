@@ -70,25 +70,27 @@ class NoamOpt:
 
 
 class MaskLoss:
-    def __init__(self, optimizer=None):
+    def __init__(self, model: image_text_model.ImageTextModel, optimizer=None, clip: int = 1):
         self.criterion = label_smoothed_nll_loss
         self.optimizer = optimizer
+        self.clip = clip
+        self.model = model
 
     def __call__(self, prediction, gold_standard, norm):
         loss = self.criterion(prediction.contiguous().view(-1, prediction.size(-1)),
-                              gold_standard.contiguous().view(-1), epsilon=0.1)
-
+                              gold_standard.contiguous().view(-1), epsilon=0)
         loss.backward()
         if self.optimizer is not None:
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
-            self.optimizer.optimizer.zero_grad()
+            self.optimizer.zero_grad()
         return loss.data * norm
 
 
 class Trainer:
-    def __init__(self, model: image_text_model.ImageTextModel, mask_prob: float = 0.15, optimizer=None):
-        self.loss_compute = MaskLoss(optimizer=optimizer)
+    def __init__(self, model: image_text_model.ImageTextModel, mask_prob: float = 0.15, clip: int = 1, optimizer=None):
         self.model = model
+        self.loss_compute = MaskLoss(self.model, optimizer=optimizer, clip=clip)
         self.mask_prob = mask_prob
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -103,7 +105,8 @@ class Trainer:
         return NoamOpt(model.d_model, 2, 4000,
                        torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.98), eps=1e-9))
 
-    def train_epoch(self, data_iter: data_utils.DataLoader):
+    def train_epoch(self, data_iter: data_utils.DataLoader, valid_data_iter: data_utils.DataLoader,
+                    best_valid_loss: float, saving_path: str):
         "Standard Training and Logging Function"
         start = time.time()
         total_tokens, total_loss, tokens = 0, 0, 0
@@ -124,8 +127,35 @@ class Trainer:
                 elapsed = time.time() - start
                 print("Epoch Step: %d Loss: %f Tokens per Sec: %f" %
                       (i + 1, loss / ntokens, tokens / elapsed))
+                best_valid_loss = self.validate_and_save(best_valid_loss, saving_path, valid_data_iter)
+
                 start, tokens = time.time(), 0
-        return total_loss / total_tokens
+
+        best_valid_loss = self.validate_and_save(best_valid_loss, saving_path, valid_data_iter)
+
+        return total_loss / total_tokens, best_valid_loss
+
+    def validate_and_save(self, best_valid_loss, saving_path, valid_data_iter):
+        with torch.no_grad():
+            total_valid_loss, total_valid_tokens = 0, 0
+            for batch in valid_data_iter:
+                predictions, target = self.model(device=self.device, data=batch, mask_prob=self.mask_prob)
+                ntokens = target.size(0)
+
+                if ntokens == 0:  # Nothing to predict!
+                    continue
+
+                loss = label_smoothed_nll_loss(predictions.contiguous().view(-1, predictions.size(-1)),
+                                               target.contiguous().view(-1), epsilon=0)
+                total_valid_loss += loss
+                total_valid_tokens += ntokens
+
+            valid_loss = total_valid_loss / total_valid_tokens
+            if best_valid_loss > valid_loss.data:
+                best_valid_loss = valid_loss.data
+                print("saving best valid loss", best_valid_loss)
+                torch.save(self.model.state_dict(), saving_path)
+        return best_valid_loss
 
     @staticmethod
     def train(options):
@@ -144,8 +174,11 @@ class Trainer:
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
 
         train_data = dataset.ImageTextDataset(data_idx_file=options.data_path, transform=transform, tokenizer=tokenizer)
+        valid_data = dataset.ImageTextDataset(data_idx_file=options.valid_path, transform=transform,
+                                              tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)
-        loader = data_utils.DataLoader(train_data, batch_size=4, shuffle=False, collate_fn=collator)
+        loader = data_utils.DataLoader(train_data, batch_size=options.batch, shuffle=False, collate_fn=collator)
+        valid_loader = data_utils.DataLoader(valid_data, batch_size=options.batch, shuffle=False, collate_fn=collator)
 
         model = image_text_model.ImageTextModel(text_encoder=text_encoder, image_encoder=img_model,
                                                 tokenizer=tokenizer,
@@ -154,17 +187,26 @@ class Trainer:
                                                 d_ff=options.d_ff,
                                                 num_layers=options.num_layers,
                                                 num_heads=options.num_heads)
-        trainer = Trainer(model=model, mask_prob=options.mask_prob, optimizer=Trainer.get_std_opt(model))
+        trainer = Trainer(model=model, mask_prob=options.mask_prob, optimizer=Trainer.get_std_opt(model),
+                          clip=options.clip)
 
+        best_valid_loss = float("inf")
         for i in range(options.num_epochs):
-            trainer.train_epoch(loader)
+            with torch.autograd.detect_anomaly():
+                _, best_valid_loss = trainer.train_epoch(data_iter=loader, valid_data_iter=valid_loader,
+                                                         best_valid_loss=best_valid_loss,
+                                                         saving_path=options.model_path)
 
 
 def get_options():
     global options
     parser = OptionParser()
     parser.add_option("--data", dest="data_path", help="Path to the data folder", metavar="FILE", default=None)
+    parser.add_option("--valid", dest="valid_path", help="Path to the dev data folder", metavar="FILE", default=None)
+    parser.add_option("--model", dest="model_path", help="Path to save the best model", metavar="FILE", default=None)
     parser.add_option("--epoch", dest="num_epochs", help="Number of training epochs", type="int", default=25)
+    parser.add_option("--clip", dest="clip", help="For gradient clipping", type="int", default=1)
+    parser.add_option("--batch", dest="batch", help="Batch size", type="int", default=8)
     parser.add_option("--mask", dest="mask_prob", help="Random masking probability", type="float", default=0.15)
     parser.add_option("--embed", dest="d_model", help="Embedding of contextual word vectors", type="int", default=768)
     parser.add_option("--dropout", dest="dropout", help="Dropout probability", type="float", default=0.1)

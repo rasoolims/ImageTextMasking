@@ -21,14 +21,14 @@ class ModifiedResnet(models.ResNet):
         grid_hidden = grid_hidden.permute((0, 2, 1))
         if self.dropout > 0:
             grid_hidden = F.dropout(grid_hidden, p=self.dropout)
-        out = self.fc(grid_hidden)
+        grid_outputs = self.fc(grid_hidden)
 
         location_indices = torch.stack(batch_size * [torch.tensor([i for i in range(49)])])
         location_embedding = self.location_embedding(location_indices)
         if self.dropout > 0:
             location_embedding = F.dropout(location_embedding, p=self.dropout)
 
-        out = out + location_embedding
+        out = grid_outputs + location_embedding
 
         return out
 

@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 
 import torch
@@ -90,15 +91,19 @@ class TestDataSet(unittest.TestCase):
 
     def testTrainer(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
+        valid_loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
         model = image_text_model.ImageTextModel(text_encoder=self.text_encoder, image_encoder=self.image_model,
                                                 tokenizer=self.data.tokenizer)
         model = model.to(self.device)
 
         # choose high value for mask just for test
         trainer = train.Trainer(model=model, mask_prob=0.5)
-        loss = trainer.train_epoch(data_iter=loader)
-
-        assert float(loss.data) >= 0
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            loss, best_valid_loss = trainer.train_epoch(data_iter=loader, valid_data_iter=valid_loader,
+                                                        best_valid_loss=float("inf"),
+                                                        saving_path=os.path.join(tmpdirname, "model"))
+            assert float(loss.data) >= 0
+            assert float(best_valid_loss) >= 0
 
 
 if __name__ == '__main__':

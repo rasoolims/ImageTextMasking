@@ -83,7 +83,7 @@ class MaskLoss:
         if self.optimizer is not None:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
-            self.optimizer.zero_grad()
+            self.optimizer.optimizer.zero_grad()
         return loss.data * norm
 
 

@@ -151,8 +151,8 @@ class Trainer:
                 total_valid_tokens += ntokens
 
             valid_loss = total_valid_loss / total_valid_tokens
-            if best_valid_loss > valid_loss.data:
-                best_valid_loss = valid_loss.data
+            if best_valid_loss > float(valid_loss.data):
+                best_valid_loss = float(valid_loss.data)
                 print("saving best valid loss", best_valid_loss)
                 torch.save(self.model.state_dict(), saving_path)
         return best_valid_loss

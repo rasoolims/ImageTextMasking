@@ -29,8 +29,9 @@ class ModifiedResnet(models.ResNet):
             location_embedding = F.dropout(location_embedding, p=self.dropout)
 
         out = grid_outputs + location_embedding
-
-        return out
+        norm = torch.nn.LayerNorm(out.size()[1:])
+        out_norm = norm(out)
+        return out_norm
 
 
 def init_net(embed_dim: int, dropout: float = 0.1, freeze: bool = False):

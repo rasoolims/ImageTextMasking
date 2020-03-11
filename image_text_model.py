@@ -34,7 +34,6 @@ class ImageTextModel(nn.Module):
 
         image_hidden = self.image_encoder(images)
 
-        mask, masked_ids = None, None
         assert 0 < mask_prob < 1
         mask = torch.empty(texts.size()).uniform_(0, 1) < mask_prob
         mask[0] = False

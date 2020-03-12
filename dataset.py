@@ -42,7 +42,7 @@ class ImageTextDataset(Dataset):
 
                     for sen in sentences:
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
-                        if len(tok_sen)<512: #todo better splitting
+                        if len(tok_sen)>512: #todo better splitting
                             print("ignored seq len", len(tok_sen))
                             if label not in self.label2idx:
                                 self.label2idx[label] = len(self.label2idx)

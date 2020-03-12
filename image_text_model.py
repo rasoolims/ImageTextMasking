@@ -31,14 +31,13 @@ class ImageTextModel(nn.Module):
         images = data["images"].to(device)
         texts = data["texts"].to(device)
         pads = data["pad_mask"].to(device)
-        
+
         image_hidden = self.image_encoder(images)
 
         assert 0 < mask_prob < 1
         mask = torch.empty(texts.size()).uniform_(0, 1) < mask_prob
         mask = mask.to(device)
         mask[0] = False
-
         mask[pads] = False  # We should not mask pads.
         masked_ids = texts[mask]
         texts[mask] = self.tokenizer.mask_token_id

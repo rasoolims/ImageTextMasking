@@ -84,7 +84,7 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        norm = torch.nn.LayerNorm(x.size()[1:])
+        norm = torch.nn.LayerNorm(x.size()[-1], eps=1e-12)
         "Apply residual connection to any sublayer with the same size."
         return x + self.dropout(sublayer(norm(x)))
 
@@ -99,7 +99,7 @@ class Decoder(nn.Module):
     def forward(self, text, image, text_mask, image_mask=None):
         for layer in self.layers:
             text = layer(text, image, text_mask, image_mask)
-        norm = torch.nn.LayerNorm(text.size()[1:])
+        norm = torch.nn.LayerNorm(text.size()[-1], eps=1e-12)
         return norm(text)
 
 

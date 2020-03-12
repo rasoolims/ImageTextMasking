@@ -173,7 +173,7 @@ class Trainer:
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
 
-        train_data = dataset.ImageTextDataset(data_idx_file=options.data_path, transform=transform, tokenizer=tokenizer)
+        train_data = dataset.ImageTextDataset(data_idx_file=options.train_path, transform=transform, tokenizer=tokenizer)
         valid_data = dataset.ImageTextDataset(data_idx_file=options.valid_path, transform=transform,
                                               tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)
@@ -201,7 +201,7 @@ class Trainer:
 def get_options():
     global options
     parser = OptionParser()
-    parser.add_option("--data", dest="data_path", help="Path to the data folder", metavar="FILE", default=None)
+    parser.add_option("--train", dest="train_path", help="Path to the train data folder", metavar="FILE", default=None)
     parser.add_option("--valid", dest="valid_path", help="Path to the dev data folder", metavar="FILE", default=None)
     parser.add_option("--model", dest="model_path", help="Path to save the best model", metavar="FILE", default=None)
     parser.add_option("--epoch", dest="num_epochs", help="Number of training epochs", type="int", default=25)

@@ -24,6 +24,8 @@ class ModifiedResnet(models.ResNet):
         grid_outputs = self.fc(grid_hidden)
 
         location_indices = torch.stack(batch_size * [torch.tensor([i for i in range(49)])])
+        if torch.cuda.is_available():
+            location_indices = location_indices.cuda(grid_outputs.get_device())
         location_embedding = self.location_embedding(location_indices)
         if self.dropout > 0:
             location_embedding = F.dropout(location_embedding, p=self.dropout)

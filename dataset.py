@@ -41,12 +41,13 @@ class ImageTextDataset(Dataset):
                         continue
 
                     for sen in sentences:
-                        if label not in self.label2idx:
-                            self.label2idx[label] = len(self.label2idx)
-                            self.idx2label.append(label)
-                        init_labels.append(self.label2idx[label])
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
                         if len(tok_sen)<512: #todo better splitting
+                            print("ignored seq len", len(tok_sen))
+                            if label not in self.label2idx:
+                                self.label2idx[label] = len(self.label2idx)
+                                self.idx2label.append(label)
+                            init_labels.append(self.label2idx[label])
                             init_sentences.append(tok_sen)
                             batch_lens.append(len(tok_sen))
                             init_images.append(image_path)

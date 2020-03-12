@@ -41,8 +41,8 @@ class ImageTextModel(nn.Module):
         masked_ids = texts[mask]
         texts[mask] = self.tokenizer.mask_token_id
 
-        image_hidden = self.image_encoder(images)
         text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=pads)
+        image_hidden = self.image_encoder(images)
         decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=pads)
 
         output_predictions = F.log_softmax(self.output_layer(decoder_output[mask]), dim=1)

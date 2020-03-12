@@ -168,13 +168,24 @@ class Trainer:
                 std=[0.229, 0.224, 0.225]  # [7]
             )])
 
+        gray_scale_transform = transforms.Compose([  # [1]
+            transforms.Resize(256),  # [2]
+            transforms.CenterCrop(224),  # [3]
+            transforms.ToTensor(),  # [4]
+            transforms.Normalize(  # [5]
+                mean=[0.485],  # [6]
+                std=[0.229]  # [7]
+            )])
+
         img_model = image_model.init_net(embed_dim=768)  # todo as option!
 
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
 
-        train_data = dataset.ImageTextDataset(data_idx_file=options.train_path, transform=transform, tokenizer=tokenizer)
+        train_data = dataset.ImageTextDataset(data_idx_file=options.train_path, transform=transform,
+                                              gray_scale_transform=gray_scale_transform, tokenizer=tokenizer)
         valid_data = dataset.ImageTextDataset(data_idx_file=options.valid_path, transform=transform,
+                                              gray_scale_transform=gray_scale_transform,
                                               tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)
         loader = data_utils.DataLoader(train_data, batch_size=options.batch, shuffle=False, collate_fn=collator)

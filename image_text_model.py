@@ -32,7 +32,6 @@ class ImageTextModel(nn.Module):
         texts = data["texts"].to(device)
         pads = data["pad_mask"].to(device)
 
-        image_hidden = self.image_encoder(images)
 
         assert 0 < mask_prob < 1
         mask = torch.empty(texts.size()).uniform_(0, 1) < mask_prob
@@ -42,6 +41,7 @@ class ImageTextModel(nn.Module):
         masked_ids = texts[mask]
         texts[mask] = self.tokenizer.mask_token_id
 
+        image_hidden = self.image_encoder(images)
         text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=pads)
         decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=pads)
 

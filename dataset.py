@@ -69,7 +69,7 @@ class ImageTextDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, item: int):
-        image = Image.open(self.images[item])
+        image = Image.open(self.images[item]).convert("RGB") # make sure not to deal with rgba or grayscale images.
         if self.transform is not None:
             image = self.transform(image)
 

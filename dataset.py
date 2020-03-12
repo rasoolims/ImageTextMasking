@@ -46,9 +46,10 @@ class ImageTextDataset(Dataset):
                             self.idx2label.append(label)
                         init_labels.append(self.label2idx[label])
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
-                        init_sentences.append(tok_sen)
-                        batch_lens.append(len(tok_sen))
-                        init_images.append(image_path)
+                        if len(tok_sen)<512: #todo better splitting
+                            init_sentences.append(tok_sen)
+                            batch_lens.append(len(tok_sen))
+                            init_images.append(image_path)
 
         # Sorting the elements in the data based on batch length
         self.images = []

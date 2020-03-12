@@ -42,8 +42,7 @@ class ImageTextDataset(Dataset):
 
                     for sen in sentences:
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
-                        if len(tok_sen)>512: #todo better splitting
-                            print("ignored seq len", len(tok_sen))
+                        if len(tok_sen)<=512: #todo better splitting
                             if label not in self.label2idx:
                                 self.label2idx[label] = len(self.label2idx)
                                 self.idx2label.append(label)
@@ -51,6 +50,8 @@ class ImageTextDataset(Dataset):
                             init_sentences.append(tok_sen)
                             batch_lens.append(len(tok_sen))
                             init_images.append(image_path)
+                        else:
+                            print("ignored seq len", len(tok_sen))
 
         # Sorting the elements in the data based on batch length
         self.images = []

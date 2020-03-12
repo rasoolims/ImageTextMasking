@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 
 class ImageTextDataset(Dataset):
-    def __init__(self, data_idx_file: str, transform, gray_scale_transform, tokenizer):
+    def __init__(self, data_idx_file: str, transform, tokenizer):
         """
 
         :param data_idx_file: Each line is tab-separated. First: label, second: image path, others: tab-separated
@@ -17,7 +17,6 @@ class ImageTextDataset(Dataset):
         :param tokenizer: BERT-style tokenizer.
         """
         self.transform = transform
-        self.gray_scale_transform = gray_scale_transform
         self.tokenizer = tokenizer
         IMG_EXTENSIONS = {'.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP'}
 
@@ -43,7 +42,7 @@ class ImageTextDataset(Dataset):
 
                     for sen in sentences:
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
-                        if len(tok_sen) <= 512:  # todo better splitting
+                        if len(tok_sen)<=512: #todo better splitting
                             if label not in self.label2idx:
                                 self.label2idx[label] = len(self.label2idx)
                                 self.idx2label.append(label)
@@ -72,11 +71,7 @@ class ImageTextDataset(Dataset):
     def __getitem__(self, item: int):
         image = Image.open(self.images[item])
         if self.transform is not None:
-            try:
-                image = self.transform(image)
-            except:
-                # gray scale is repeated 3 times!
-                image = self.gray_scale_transform(image).repeat(3, 1, 1)
+            image = self.transform(image)
 
         return {"image": image, "text": torch.LongTensor(self.texts[item]),
                 "label": torch.LongTensor([self.labels[item]])}

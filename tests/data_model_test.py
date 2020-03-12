@@ -25,21 +25,12 @@ class TestDataSet(unittest.TestCase):
                 mean=[0.485, 0.456, 0.406],  # [6]
                 std=[0.229, 0.224, 0.225]  # [7]
             )])
-        gray_scale_transform = transforms.Compose([  # [1]
-            transforms.Resize(256),  # [2]
-            transforms.CenterCrop(224),  # [3]
-            transforms.ToTensor(),  # [4]
-            transforms.Normalize(  # [5]
-                mean=[0.485],  # [6]
-                std=[0.229]  # [7]
-            )])
 
         path_dir_name = os.path.dirname(os.path.realpath(__file__))
         data_path = os.path.join(path_dir_name, "small_data/labels.txt")
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
 
-        self.data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform,
-                                             gray_scale_transform=gray_scale_transform, tokenizer=tokenizer)
+        self.data = dataset.ImageTextDataset(data_idx_file=data_path, transform=transform, tokenizer=tokenizer)
         self.collator = dataset.ImageTextCollator(pad_idx=self.data.tokenizer.pad_token_id)
         self.text_encoder = AlbertModel.from_pretrained("albert-base-v1")
         self.image_model = image_model.init_net(embed_dim=768)

@@ -37,6 +37,10 @@ class ImageTextModel(nn.Module):
         assert 0 < mask_prob < 1
         mask = torch.empty(texts.size()).uniform_(0, 1) < mask_prob
         mask[0] = False
+
+        if torch.cuda.is_available():
+            mask = mask.cuda(pads.get_device())
+
         mask[pads] = False  # We should not mask pads.
         masked_ids = texts[mask]
         texts[mask] = self.tokenizer.mask_token_id

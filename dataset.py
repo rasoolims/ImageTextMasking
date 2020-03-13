@@ -30,7 +30,7 @@ class ImageTextDataset(Dataset):
         self.images = []
         self.texts = []
         self.labels = []
-
+        total_sentences = 0
         with open(data_idx_file, "r") as reader:
             for ln, line in enumerate(reader):
                 spl = line.strip().split("\t")
@@ -54,13 +54,15 @@ class ImageTextDataset(Dataset):
 
                     if len(the_sens) > 0:
                         self.texts.append(the_sens)
+                        total_sentences += len(the_sens)
                         self.labels.append(self.label2idx[label])
                         self.images.append(image_path)
 
-                if ln % 100000 == 0:
-                    print(ln, "-> loading number until now", len(self.images))
+                if (ln + 1) % 100000 == 0:
+                    print(ln + 1, "-> loading number until now", len(self.images), "total sentences", total_sentences)
 
-        print("loaded", len(self.images), "image/text pairs with", len(self.label2idx), "unique labels")
+        print("loaded", len(self.images), "image/text pairs with", len(self.label2idx), "unique labels",
+              "total sentences", total_sentences)
 
     def __len__(self):
         return len(self.images)

@@ -42,7 +42,7 @@ class ImageTextDataset(Dataset):
 
                     for sen in sentences:
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
-                        if len(tok_sen)<=512: #todo better splitting
+                        if len(tok_sen) <= 512:  # todo better splitting
                             if label not in self.label2idx:
                                 self.label2idx[label] = len(self.label2idx)
                                 self.idx2label.append(label)
@@ -69,7 +69,7 @@ class ImageTextDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, item: int):
-        image = Image.open(self.images[item]).convert("RGB") # make sure not to deal with rgba or grayscale images.
+        image = Image.open(self.images[item]).convert("RGB")  # make sure not to deal with rgba or grayscale images.
         if self.transform is not None:
             image = self.transform(image)
 

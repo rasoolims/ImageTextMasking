@@ -79,14 +79,14 @@ class SublayerConnection(nn.Module):
     Note for code simplicity the norm is first as opposed to last.
     """
 
-    def __init__(self, dropout):
+    def __init__(self, size, dropout):
         super(SublayerConnection, self).__init__()
         self.dropout = nn.Dropout(dropout)
+        self.layer_norm = torch.nn.LayerNorm(size, eps=1e-12)
 
     def forward(self, x, sublayer):
-        norm = torch.nn.LayerNorm(x.size()[-1], eps=1e-12)
         "Apply residual connection to any sublayer with the same size."
-        return x + self.dropout(sublayer(norm(x)))
+        return x + self.dropout(sublayer(self.layer_norm(x)))
 
 
 class Decoder(nn.Module):
@@ -95,12 +95,12 @@ class Decoder(nn.Module):
     def __init__(self, layer, N):
         super(Decoder, self).__init__()
         self.layers = clones(layer, N)
+        self.layer_norm = torch.nn.LayerNorm(layer.size, eps=1e-12)
 
     def forward(self, text, image, text_mask, image_mask=None):
         for layer in self.layers:
             text = layer(text, image, text_mask, image_mask)
-        norm = torch.nn.LayerNorm(text.size()[-1], eps=1e-12)
-        return norm(text)
+        return self.layer_norm(text)
 
 
 class DecoderLayer(nn.Module):
@@ -111,7 +111,7 @@ class DecoderLayer(nn.Module):
         self.size = size
         self.src_attn = src_attn
         self.feed_forward = feed_forward
-        self.sublayer = clones(SublayerConnection(dropout), 2)
+        self.sublayer = clones(SublayerConnection(size, dropout), 2)
 
     def forward(self, text, image, text_mask, image_mask=None):
         """

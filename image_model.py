@@ -42,13 +42,15 @@ def init_net(embed_dim: int, dropout: float = 0.1, freeze: bool = False):
     model.layer_norm = torch.nn.LayerNorm(embed_dim, eps=1e-12)
 
     if freeze:
-        model.eval()
+        for param in model.parameters():
+            param.requires_grad = False
 
     current_weight = model.state_dict()["fc.weight"]
     model.fc = torch.nn.Linear(in_features=current_weight.size()[1], out_features=embed_dim, bias=False)
-    model.fc.training = True
+    model.fc.train()
 
     # Learning embedding of each CNN region.
     model.location_embedding = nn.Embedding(49, embed_dim)
+    model.location_embedding.train(True)
 
     return model

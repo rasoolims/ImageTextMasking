@@ -173,7 +173,7 @@ class Trainer:
                 std=[0.229, 0.224, 0.225]  # [7]
             )])
 
-        img_model = image_model.init_net(embed_dim=768)  # todo as option!
+        img_model = image_model.init_net(embed_dim=768, freeze=options.freeze_image)
 
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
@@ -219,6 +219,7 @@ def get_options():
     parser.add_option("--dff", dest="d_ff", help="Position-wise feed-forward dimensions", type="int", default=2048)
     parser.add_option("--layer", dest="num_layers", help="Number of Layers in cross-attention", type="int", default=2)
     parser.add_option("--heads", dest="num_heads", help="Number of attention heads", type="int", default=8)
+    parser.add_option("--freeze", action="store_true", dest="freeze_image", default=False)
     (options, args) = parser.parse_args()
     return options
 

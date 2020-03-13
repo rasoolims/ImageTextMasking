@@ -5,6 +5,9 @@ import torch
 from PIL import Image
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
+import logging
+
+logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 
 
 class ImageTextDataset(Dataset):
@@ -50,8 +53,6 @@ class ImageTextDataset(Dataset):
                             init_sentences.append(tok_sen)
                             batch_lens.append(len(tok_sen))
                             init_images.append(image_path)
-                        else:
-                            print("ignored seq len", len(tok_sen))
 
         # Sorting the elements in the data based on batch length
         self.images = []

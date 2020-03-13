@@ -42,6 +42,13 @@ class ImageTextModel(nn.Module):
 
         text_hidden, text_cls_head = self.text_encoder(texts, attention_mask=pads)
         image_hidden = self.image_encoder(images)
+
+        # Now we map back to the text-image pair if some images have more than one text!
+        if text_hidden.size(0) > image_hidden.size(0):
+            new_image_hidden = []
+            for index in data["text_image_map"]:
+                new_image_hidden.append(image_hidden[index])
+            image_hidden = torch.stack(new_image_hidden)
         decoder_output = self.decoder(text=text_hidden, image=image_hidden, text_mask=pads)
 
         output_predictions = F.log_softmax(self.output_layer(decoder_output[mask]), dim=1)

@@ -38,7 +38,7 @@ class TestDataSet(unittest.TestCase):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def test_data(self):
-        assert len(self.data) == 28
+        assert len(self.data) == 15
         assert len(self.data.texts[0]) < len(self.data.texts[-1])  # Make sure the data is sorted by length.
 
         for d in self.data:
@@ -50,10 +50,10 @@ class TestDataSet(unittest.TestCase):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
 
         for d in loader:
-            assert len(d) == 4
+            assert len(d) == 5
             hidden_reps, cls_head = self.text_encoder(d["texts"], attention_mask=d["pad_mask"])
-            assert hidden_reps.size(0) <= 4
-            assert cls_head.size(0) <= 4
+            assert hidden_reps.size(0) == len(d["texts"])
+            assert cls_head.size(0) == len(d["texts"])
 
     def test_image_model(self):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)

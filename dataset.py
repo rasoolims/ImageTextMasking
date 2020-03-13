@@ -1,11 +1,10 @@
+import logging
 import os
 
-import numpy as np
 import torch
 from PIL import Image
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
-import logging
 
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 
@@ -23,13 +22,14 @@ class ImageTextDataset(Dataset):
         self.tokenizer = tokenizer
         IMG_EXTENSIONS = {'.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP'}
 
-        init_labels = []
-        init_images = []
-        init_sentences = []
-        batch_lens = []
         self.label2idx = {}
         self.idx2label = []
         data_dir = os.path.abspath(os.path.dirname(data_idx_file))
+
+        # Sorting the elements in the data based on batch length
+        self.images = []
+        self.texts = []
+        self.labels = []
 
         with open(data_idx_file, "r") as reader:
             for ln, line in enumerate(reader):
@@ -42,6 +42,7 @@ class ImageTextDataset(Dataset):
                     extension = image_path[image_path.rfind("."):]
                     if extension not in IMG_EXTENSIONS:
                         continue
+                    the_sens = []
 
                     for sen in sentences:
                         tok_sen = self.tokenizer.encode(sen, add_special_tokens=True)
@@ -49,23 +50,15 @@ class ImageTextDataset(Dataset):
                             if label not in self.label2idx:
                                 self.label2idx[label] = len(self.label2idx)
                                 self.idx2label.append(label)
-                            init_labels.append(self.label2idx[label])
-                            init_sentences.append(tok_sen)
-                            batch_lens.append(len(tok_sen))
-                            init_images.append(image_path)
+                            the_sens.append(tok_sen)
 
-                if ln%100000==0:
-                    print(ln,"-> loading number until now", len(init_images))
+                    if len(the_sens) > 0:
+                        self.texts.append(the_sens)
+                        self.labels.append(self.label2idx[label])
+                        self.images.append(image_path)
 
-        # Sorting the elements in the data based on batch length
-        self.images = []
-        self.texts = []
-        self.labels = []
-        len_ids = np.argsort(batch_lens)
-        for len_id in len_ids:
-            self.texts.append(init_sentences[len_id])
-            self.images.append(init_images[len_id])
-            self.labels.append(init_labels[len_id])
+                if ln % 100000 == 0:
+                    print(ln, "-> loading number until now", len(self.images))
 
         print("loaded", len(self.images), "image/text pairs with", len(self.label2idx), "unique labels")
 
@@ -77,7 +70,7 @@ class ImageTextDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
 
-        return {"image": image, "text": torch.LongTensor(self.texts[item]),
+        return {"image": image, "text": self.texts[item],
                 "label": torch.LongTensor([self.labels[item]])}
 
 
@@ -88,8 +81,17 @@ class ImageTextCollator(object):
     def __call__(self, batch):
         images = torch.stack([b["image"] for b in batch])
         texts = [b["text"] for b in batch]
+        text_to_image_map, max_len = [], 0
+        text_lists = []
+        for i, t in enumerate(texts):
+            for l in t:
+                max_len = max(len(l), max_len)
+                text_to_image_map.append(i)
+                text_lists.append(torch.LongTensor(l))
+
         labels = torch.stack([b["label"] for b in batch])
 
-        padded_text = pad_sequence(texts, padding_value=self.pad_idx).T
+        padded_text = pad_sequence(text_lists, padding_value=self.pad_idx).T
         pad_mask = (padded_text == self.pad_idx)
-        return {"images": images, "texts": padded_text, "labels": labels, "pad_mask": pad_mask}
+        return {"images": images, "texts": padded_text, "labels": labels, "pad_mask": pad_mask,
+                "text_image_map": text_to_image_map}

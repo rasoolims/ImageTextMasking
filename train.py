@@ -183,7 +183,7 @@ class Trainer:
         valid_data = dataset.ImageTextDataset(data_idx_file=options.valid_path, transform=transform,
                                               tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)
-        loader = data_utils.DataLoader(train_data, batch_size=options.batch, shuffle=False, collate_fn=collator)
+        loader = data_utils.DataLoader(train_data, batch_size=options.batch, shuffle=True, collate_fn=collator)
         valid_loader = data_utils.DataLoader(valid_data, batch_size=options.batch, shuffle=False, collate_fn=collator)
 
         model = image_text_model.ImageTextModel(text_encoder=text_encoder, image_encoder=img_model,

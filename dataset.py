@@ -32,7 +32,7 @@ class ImageTextDataset(Dataset):
         data_dir = os.path.abspath(os.path.dirname(data_idx_file))
 
         with open(data_idx_file, "r") as reader:
-            for line in reader:
+            for ln, line in enumerate(reader):
                 spl = line.strip().split("\t")
                 label, image_path, sentences = spl[0], spl[1], spl[2:]
                 if not image_path.startswith("/"):
@@ -54,8 +54,8 @@ class ImageTextDataset(Dataset):
                             batch_lens.append(len(tok_sen))
                             init_images.append(image_path)
 
-                            if len(init_images)%100000==0:
-                                print("loading number until now", len(init_images))
+                if ln%100000==0:
+                    print(ln,"-> loading number until now", len(init_images))
 
         # Sorting the elements in the data based on batch length
         self.images = []

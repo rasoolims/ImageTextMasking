@@ -54,6 +54,9 @@ class ImageTextDataset(Dataset):
                             batch_lens.append(len(tok_sen))
                             init_images.append(image_path)
 
+                            if len(init_images)%10000==0:
+                                print("loading number until now", len(init_images))
+
         # Sorting the elements in the data based on batch length
         self.images = []
         self.texts = []

@@ -1,14 +1,18 @@
+import sys
 import time
 from optparse import OptionParser
 
 import torch
 import torch.utils.data as data_utils
+from IPython.core import ultratb
 from torchvision import transforms
 from transformers import *
 
 import dataset
 import image_model
 import image_text_model
+
+sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
 
 
 def label_smoothed_nll_loss(lprobs, target, epsilon, ignore_index=None, reduce=True):
@@ -173,7 +177,8 @@ class Trainer:
         tokenizer = AlbertTokenizer.from_pretrained("albert-base-v1")
         text_encoder = AlbertModel.from_pretrained("albert-base-v1")
 
-        train_data = dataset.ImageTextDataset(data_idx_file=options.train_path, transform=transform, tokenizer=tokenizer)
+        train_data = dataset.ImageTextDataset(data_idx_file=options.train_path, transform=transform,
+                                              tokenizer=tokenizer)
         valid_data = dataset.ImageTextDataset(data_idx_file=options.valid_path, transform=transform,
                                               tokenizer=tokenizer)
         collator = dataset.ImageTextCollator(pad_idx=train_data.tokenizer.pad_token_id)

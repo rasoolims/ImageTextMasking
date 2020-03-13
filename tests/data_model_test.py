@@ -50,7 +50,7 @@ class TestDataSet(unittest.TestCase):
         loader = data_utils.DataLoader(self.data, batch_size=4, shuffle=False, collate_fn=self.collator)
 
         for d in loader:
-            assert len(d) == 5
+            assert len(d) == 4
             hidden_reps, cls_head = self.text_encoder(d["texts"], attention_mask=d["pad_mask"])
             assert hidden_reps.size(0) == len(d["texts"])
             assert cls_head.size(0) == len(d["texts"])

@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 
 import torch
 from PIL import Image
@@ -71,8 +72,9 @@ class ImageTextDataset(Dataset):
         image = Image.open(self.images[item]).convert("RGB")  # make sure not to deal with rgba or grayscale images.
         if self.transform is not None:
             image = self.transform(image)
-
-        return {"image": image, "text": self.texts[item],
+        # Pick one sentence out of many possibilities.
+        random_sentence = random.choice(self.texts[item])
+        return {"image": image, "text": torch.LongTensor(random_sentence),
                 "label": torch.LongTensor([self.labels[item]])}
 
 
@@ -83,17 +85,7 @@ class ImageTextCollator(object):
     def __call__(self, batch):
         images = torch.stack([b["image"] for b in batch])
         texts = [b["text"] for b in batch]
-        text_to_image_map, max_len = [], 0
-        text_lists = []
-        for i, t in enumerate(texts):
-            for l in t:
-                max_len = max(len(l), max_len)
-                text_to_image_map.append(i)
-                text_lists.append(torch.LongTensor(l))
-
         labels = torch.stack([b["label"] for b in batch])
-
-        padded_text = pad_sequence(text_lists, padding_value=self.pad_idx).T
+        padded_text = pad_sequence(texts, padding_value=self.pad_idx).T
         pad_mask = (padded_text == self.pad_idx)
-        return {"images": images, "texts": padded_text, "labels": labels, "pad_mask": pad_mask,
-                "text_image_map": text_to_image_map}
+        return {"images": images, "texts": padded_text, "labels": labels, "pad_mask": pad_mask}
